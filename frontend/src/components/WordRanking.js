@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Paper, 
   List, 
@@ -7,30 +7,51 @@ import {
   Typography,
   Box
 } from '@mui/material';
+import { ref, onValue } from 'firebase/database';
+import { database } from '../firebase';
 
 const WordRanking = ({ onWordSelect }) => {
-  // TODO: 실제 데이터로 교체
-  const [rankedWords] = React.useState([
-    { word: 'beautiful', count: 150 },
-    { word: 'landscape', count: 120 },
-    { word: 'sunset', count: 100 },
-    { word: 'nature', count: 90 },
-    { word: 'art', count: 80 },
-  ]);
+  const [rankedWords, setRankedWords] = useState([]);
+
+  useEffect(() => {
+    // Firebase Realtime Database에서 단어 랭킹 데이터 구독
+    const wordsRef = ref(database, 'wordCounts');
+    const unsubscribe = onValue(wordsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // 데이터를 배열로 변환하고 카운트 기준으로 정렬
+        const ranking = Object.entries(data)
+          .map(([word, count]) => ({ word, count }))
+          .sort((a, b) => b.count - a.count);
+        setRankedWords(ranking);
+      } else {
+        setRankedWords([]);
+      }
+    });
+
+    // 컴포넌트 언마운트 시 구독 해제
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Paper sx={{ 
       p: 3, 
       mb: 3, 
-      height: '100vh',  // Container의 py: 4(32px)를 고려한 높이
-      // bgcolor: 'grey.100',
+      height: '90vh',
       position: 'sticky',
-      top: 0
-    }} elevation={0}>
+      top: 0,
+      borderRadius: 8,
+      display: 'flex',
+      flexDirection: 'column'
+    }} elevation={10}>
       <Typography variant="h5" gutterBottom>
-        인기 단어 랭킹
+        Ranking
       </Typography>
       
+      <Box sx={{
+        flex: 1,
+        overflowY: 'auto'
+      }}>
       <List>
         {rankedWords.map((item, index) => (
           <ListItem 
@@ -56,6 +77,7 @@ const WordRanking = ({ onWordSelect }) => {
           </ListItem>
         ))}
       </List>
+      </Box>
     </Paper>
   );
 };
