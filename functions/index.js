@@ -2,19 +2,22 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios"); // server.js에 있던 모든 import를 여기에 추가
-// require('dotenv').config({ path: '../backend/.env' }); // 이 줄은 제거
+const axios = require("axios");
+
+
+const databaseUrl = "https://toppick-ai-default-rtdb.firebaseio.com/";
+// const apiKey = "sk-71M97G0FiL7HDp47XeDAGCi87oj2J1Ll14k3zokvpW3pYRF8";
+// const apiKey = functions.config().stability.api_key;
+
 
 // Firebase Admin 초기화
 const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: functions.config().app.database_url,
+  databaseURL: databaseUrl,
 });
 
-
 const app = express();
-// const port = process.env.PORT || 5000; // 이 줄을 제거합니다.
 
 // CORS 설정 추가
 app.use(cors({
@@ -27,6 +30,7 @@ app.use(express.json());
 
 // Stable Diffusion API 엔드포인트
 app.post("/api/generate-image", async (req, res) => {
+  const apiKey = process.env.STABILITY_API_KEY;
   try {
     const {prompt} = req.body;
     console.log(prompt);
@@ -63,7 +67,7 @@ app.post("/api/generate-image", async (req, res) => {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "Authorization": `Bearer ${functions.config().stability.api_key}`,
+        "Authorization": `Bearer ${apiKey}`,
       },
     });
 
